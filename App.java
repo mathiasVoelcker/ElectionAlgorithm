@@ -29,7 +29,7 @@ public class App {
 
         try {
 
-            nodes = FileHelper.ReadFile("src//file.txt");
+            nodes = FileHelper.ReadFile("file.txt");
 
             node = nodes.get(Integer.parseInt(args[1]) - 1);
 
@@ -87,17 +87,18 @@ public class App {
                             received = new String(packet.getData(), 0, packet.getLength());
                             System.out.println(received);
                             if (!received.equals("cleared")) {
+                                String[] senderData2 = received.split("-");
                                 output = "notOkFromManager".getBytes();
                                 sendPacket = new DatagramPacket(
                                     output, 
                                     output.length,
-                                    InetAddress.getByName(keyHolder.host), 
-                                    Integer.parseInt(keyHolder.port)
+                                    InetAddress.getByName(senderData2[0]), 
+                                    Integer.parseInt(senderData2[1])
                                     );
                                 socket.send(sendPacket);
                             }
                         } catch (SocketTimeoutException e) {
-                            continue;
+                            break;
                         }
                     }
                 } catch (NumberFormatException | IOException e) {
@@ -149,7 +150,7 @@ public class App {
                             socket.send(datagramPacket);
                         } else {
                             System.out.println("Critical Zone already in use");
-                            continue;
+                            // continue;
                         }
                     } catch (SocketTimeoutException e) {
                         try {
