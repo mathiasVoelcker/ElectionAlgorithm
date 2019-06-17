@@ -1,6 +1,5 @@
 // package election;
 
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -22,6 +21,8 @@ public class App {
     public static DatagramSocket socketElection;
 
     public static boolean isManagerNode;
+
+    public static boolean isManagerNodeTemp;
 
     public static boolean electionInProgress;
 
@@ -73,14 +74,10 @@ public class App {
                     String[] senderData = received.split("-");
                     keyHolder = new Node(0, senderData[0], senderData[1]);
                     byte[] output = "okFromManager".getBytes();
-                    DatagramPacket sendPacket = new DatagramPacket(
-                        output, 
-                        output.length,
-                        InetAddress.getByName(keyHolder.host), 
-                        Integer.parseInt(keyHolder.port)
-                        );
+                    DatagramPacket sendPacket = new DatagramPacket(output, output.length,
+                            InetAddress.getByName(keyHolder.host), Integer.parseInt(keyHolder.port));
                     socket.send(sendPacket);
-                    while(!received.equals("cleared")) {
+                    while (!received.equals("cleared")) {
                         try {
                             socket.setSoTimeout(3500);
                             socket.receive(packet);
@@ -89,12 +86,8 @@ public class App {
                                 System.out.println("sending not ok to " + received);
                                 String[] senderData2 = received.split("-");
                                 output = "notOkFromManager".getBytes();
-                                sendPacket = new DatagramPacket(
-                                    output, 
-                                    output.length,
-                                    InetAddress.getByName(senderData2[0]), 
-                                    Integer.parseInt(senderData2[1])
-                                    );
+                                sendPacket = new DatagramPacket(output, output.length,
+                                        InetAddress.getByName(senderData2[0]), Integer.parseInt(senderData2[1]));
                                 socket.send(sendPacket);
                             }
                         } catch (SocketTimeoutException e) {
@@ -118,11 +111,8 @@ public class App {
                     Node managerNode = nodes.get(managerNodeId - 1);
                     DatagramPacket datagramPacket;
                     try {
-                        datagramPacket = new DatagramPacket(
-                                output,
-                                output.length,
-                                InetAddress.getByName(managerNode.host),
-                                Integer.parseInt(managerNode.port));
+                        datagramPacket = new DatagramPacket(output, output.length,
+                                InetAddress.getByName(managerNode.host), Integer.parseInt(managerNode.port));
                         System.out.println("Sending: " + managerNode.host + "-" + managerNode.port);
                         socket.send(datagramPacket);
                     } catch (NumberFormatException | IOException e) {
@@ -141,16 +131,12 @@ public class App {
                                 e.printStackTrace();
                             }
                             output = "cleared".getBytes();
-                            datagramPacket = new DatagramPacket(
-                                    output,
-                                    output.length,
-                                    InetAddress.getByName(managerNode.host),
-                                    Integer.parseInt(managerNode.port));
+                            datagramPacket = new DatagramPacket(output, output.length,
+                                    InetAddress.getByName(managerNode.host), Integer.parseInt(managerNode.port));
                             System.out.println("Sending clear to : " + managerNode.host + "-" + managerNode.port);
                             socket.send(datagramPacket);
                         } else {
                             System.out.println("Critical Zone already in use");
-                            // continue;
                         }
                     } catch (SocketTimeoutException e) {
                         try {
@@ -173,7 +159,7 @@ public class App {
 
     private static void startElection() throws InterruptedException {
         if (!electionInProgress) {
-            isManagerNode = true;
+            isManagerNodeTemp = true;
             electionInProgress = true;
             System.out.println("Start election");
             for (Node nodeCandidate : nodes) {
@@ -181,11 +167,20 @@ public class App {
                     sendElectionMessage(nodeCandidate);
                 }
             }
-            Thread.sleep(5000);
-            if (isManagerNode) {
-                declareAsManagerNode();
-                electionInProgress = false;
-            }
+            // if (node.id <= 3) {
+            // isManagerNodeTemp = false;
+            // }
+            new Thread(() -> {
+                try {
+					Thread.sleep(5000);
+                    if (isManagerNodeTemp) {
+                        declareAsManagerNode();
+                        electionInProgress = false;
+                    }
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+            }).start();
         }
     }
 
@@ -218,6 +213,7 @@ public class App {
                     byte[] input = new byte[256];
                     DatagramPacket packet = new DatagramPacket(input, input.length);
                     try {
+                        socket.setSoTimeout(3000);
                         System.out.println("RECEIVING: " + node.host + "-" + node.port.replace('8', '9'));
                         socketElection.receive(packet);
                         String received = new String(packet.getData(), 0, packet.getLength());
@@ -244,12 +240,14 @@ public class App {
                             System.out.println(managerNodeId);
                             electionInProgress = false;
                         } else if (received.equals("ok")) {
-                            isManagerNode = false;
+                            isManagerNodeTemp = false;
                         }
 
                     } catch (NumberFormatException | SocketException e1) {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
+                    } catch(SocketTimeoutException e1) {
+
                     }
                 } catch (Exception ex) {
 
@@ -271,6 +269,7 @@ public class App {
                 System.out.println("Sending: " + sendingNode.host + "-" + sendingNode.port.replace('8', '9') + " - " + message);
                 socketElection.send(datagramPacket);
             }
+            isManagerNode = true;
             System.out.println("Node is manager");
             manageMessages().start();
         } catch (NumberFormatException | IOException e) {
