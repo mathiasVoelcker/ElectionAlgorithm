@@ -85,8 +85,8 @@ public class App {
                             socket.setSoTimeout(3500);
                             socket.receive(packet);
                             received = new String(packet.getData(), 0, packet.getLength());
-                            System.out.println(received);
                             if (!received.equals("cleared")) {
+                                System.out.println("sending not ok to " + received);
                                 String[] senderData2 = received.split("-");
                                 output = "notOkFromManager".getBytes();
                                 sendPacket = new DatagramPacket(
