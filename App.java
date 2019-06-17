@@ -1,4 +1,4 @@
-package election;
+// package election;
 
 
 import java.io.IOException;
@@ -62,6 +62,7 @@ public class App {
     public static Thread manageMessages() {
         return new Thread(() -> {
             while (true) {
+                Node keyHolder = null;
                 byte[] input = new byte[256];
                 DatagramPacket packet = new DatagramPacket(input, input.length);
                 try {
@@ -70,14 +71,35 @@ public class App {
                     String received = new String(packet.getData(), 0, packet.getLength());
                     System.out.println(received);
                     String[] senderData = received.split("-");
+                    keyHolder = new Node(0, senderData[0], senderData[1]);
                     byte[] output = "okFromManager".getBytes();
                     DatagramPacket sendPacket = new DatagramPacket(
-                            output,
-                            output.length,
-                            InetAddress.getByName(senderData[0]),
-                            Integer.parseInt(senderData[1])
-                    );
+                        output, 
+                        output.length,
+                        InetAddress.getByName(keyHolder.host), 
+                        Integer.parseInt(keyHolder.port)
+                        );
                     socket.send(sendPacket);
+                    while(!received.equals("cleared")) {
+                        try {
+                            socket.setSoTimeout(3500);
+                            socket.receive(packet);
+                            received = new String(packet.getData(), 0, packet.getLength());
+                            System.out.println(received);
+                            if (!received.equals("cleared")) {
+                                output = "notOkFromManager".getBytes();
+                                sendPacket = new DatagramPacket(
+                                    output, 
+                                    output.length,
+                                    InetAddress.getByName(keyHolder.host), 
+                                    Integer.parseInt(keyHolder.port)
+                                    );
+                                socket.send(sendPacket);
+                            }
+                        } catch (SocketTimeoutException e) {
+                            continue;
+                        }
+                    }
                 } catch (NumberFormatException | IOException e) {
                     e.printStackTrace();
                 }
