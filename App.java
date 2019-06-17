@@ -1,3 +1,5 @@
+package election;
+
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -27,7 +29,7 @@ public class App {
 
         try {
 
-            nodes = FileHelper.ReadFile("file.txt");
+            nodes = FileHelper.ReadFile("src//file.txt");
 
             node = nodes.get(Integer.parseInt(args[1]) - 1);
 
@@ -47,7 +49,7 @@ public class App {
         if (node.id == nodes.get(nodes.size() - 1).id) {
             System.out.println("Node is manager");
             manageMessages().start();
-            
+
         } else {
             System.out.println("Node is not manager");
             sendMessageToManager().start();
@@ -70,11 +72,11 @@ public class App {
                     String[] senderData = received.split("-");
                     byte[] output = "okFromManager".getBytes();
                     DatagramPacket sendPacket = new DatagramPacket(
-                        output, 
-                        output.length,
-                        InetAddress.getByName(senderData[0]), 
-                        Integer.parseInt(senderData[1])
-                        );
+                            output,
+                            output.length,
+                            InetAddress.getByName(senderData[0]),
+                            Integer.parseInt(senderData[1])
+                    );
                     socket.send(sendPacket);
                 } catch (NumberFormatException | IOException e) {
                     e.printStackTrace();
@@ -94,10 +96,10 @@ public class App {
                     DatagramPacket datagramPacket;
                     try {
                         datagramPacket = new DatagramPacket(
-                            output, 
-                            output.length,
-                            InetAddress.getByName(managerNode.host), 
-                            Integer.parseInt(managerNode.port));
+                                output,
+                                output.length,
+                                InetAddress.getByName(managerNode.host),
+                                Integer.parseInt(managerNode.port));
                         System.out.println("Sending: " + managerNode.host + "-" + managerNode.port);
                         socket.send(datagramPacket);
                     } catch (NumberFormatException | IOException e) {
@@ -106,10 +108,27 @@ public class App {
                     byte[] input = new byte[256];
                     DatagramPacket packet = new DatagramPacket(input, input.length);
                     try {
-
                         socket.receive(packet);
                         String received = new String(packet.getData(), 0, packet.getLength());
-                        System.out.println(received);
+                        if (received.equals("okFromManager")) {
+                            System.out.println("Sleeping");
+                            try {
+                                Thread.sleep(3000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            output = "cleared".getBytes();
+                            datagramPacket = new DatagramPacket(
+                                    output,
+                                    output.length,
+                                    InetAddress.getByName(managerNode.host),
+                                    Integer.parseInt(managerNode.port));
+                            System.out.println("Sending clear to : " + managerNode.host + "-" + managerNode.port);
+                            socket.send(datagramPacket);
+                        } else {
+                            System.out.println("Critical Zone already in use");
+                            continue;
+                        }
                     } catch (SocketTimeoutException e) {
                         try {
                             startElection();
@@ -154,11 +173,11 @@ public class App {
             byte[] output = message.getBytes();
             try {
                 DatagramPacket datagramPacket = new DatagramPacket(
-                    output, 
-                    output.length,
-                    InetAddress.getByName(nodeCandidate.host), 
-                    Integer.parseInt(nodeCandidate.port.replace('8', '9'))
-                    );
+                        output,
+                        output.length,
+                        InetAddress.getByName(nodeCandidate.host),
+                        Integer.parseInt(nodeCandidate.port.replace('8', '9'))
+                );
                 System.out.println("Sending: " + nodeCandidate.host + "-" + nodeCandidate.port.replace('8', '9') + " - " + message);
                 socketElection.send(datagramPacket);
             } catch (NumberFormatException | IOException e) {
@@ -187,14 +206,14 @@ public class App {
                                 int sendingNodeId = Integer.parseInt(received.split("-")[1]);
                                 Node sendingNode = nodes.get(sendingNodeId - 1);
                                 DatagramPacket datagramPacket = new DatagramPacket(
-                                    output, 
-                                    output.length, 
-                                    InetAddress.getByName(sendingNode.host),
-                                    Integer.parseInt(sendingNode.port.replace('8', '9')));
+                                        output,
+                                        output.length,
+                                        InetAddress.getByName(sendingNode.host),
+                                        Integer.parseInt(sendingNode.port.replace('8', '9')));
                                 System.out.println("Sending: " + sendingNode.host + "-" + sendingNode.port.replace('8', '9') + " - " + message);
                                 socketElection.send(datagramPacket);
                                 startElection();
-                            }  catch (NumberFormatException | IOException e) {
+                            } catch (NumberFormatException | IOException e) {
                                 e.printStackTrace();
                             }
                         } else if (received.contains("i am the manager-")) {
@@ -204,11 +223,11 @@ public class App {
                         } else if (received.equals("ok")) {
                             isManagerNode = false;
                         }
-                        
-                } catch (NumberFormatException | SocketException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
+
+                    } catch (NumberFormatException | SocketException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
                 } catch (Exception ex) {
 
                 }
@@ -222,16 +241,16 @@ public class App {
             byte[] output = message.getBytes();
             for (Node sendingNode : nodes) {
                 DatagramPacket datagramPacket = new DatagramPacket(
-                    output, 
-                    output.length, 
-                    InetAddress.getByName(sendingNode.host),
-                    Integer.parseInt(sendingNode.port.replace('8', '9')));
+                        output,
+                        output.length,
+                        InetAddress.getByName(sendingNode.host),
+                        Integer.parseInt(sendingNode.port.replace('8', '9')));
                 System.out.println("Sending: " + sendingNode.host + "-" + sendingNode.port.replace('8', '9') + " - " + message);
                 socketElection.send(datagramPacket);
             }
             System.out.println("Node is manager");
             manageMessages().start();
-        }  catch (NumberFormatException | IOException e) {
+        } catch (NumberFormatException | IOException e) {
             e.printStackTrace();
         }
     }
