@@ -30,7 +30,7 @@ public class App {
 
         try {
 
-            nodes = FileHelper.ReadFile("file.txt");
+            nodes = FileHelper.ReadFile(args[0]);
 
             node = nodes.get(Integer.parseInt(args[1]) - 1);
 
