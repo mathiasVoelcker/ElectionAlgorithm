@@ -49,15 +49,14 @@ public class App {
     private static void start() throws InterruptedException, IOException {
         if (node.id == nodes.get(nodes.size() - 1).id) {
             System.out.println("Node is manager");
+            // declareAsManagerNode();
             manageMessages().start();
 
         } else {
             System.out.println("Node is not manager");
             sendMessageToManager().start();
-            // System.out.println("puts");
             receiveMessage().start();
         }
-        // Thread.sleep(10000);
     }
 
     public static Thread manageMessages() {
@@ -125,11 +124,24 @@ public class App {
                         String received = new String(packet.getData(), 0, packet.getLength());
                         if (received.equals("okFromManager")) {
                             System.out.println("Sleeping");
+
+                            String messageToMachine = "Acessando à zona crítica: " + node.host + "-" + node.port;
+                            byte[] outputToMachine = messageToMachine.getBytes();
+                            DatagramPacket packetToMachine = new DatagramPacket(outputToMachine, outputToMachine.length,
+                                InetAddress.getByName("localhost"), Integer.parseInt("7070"));
+                            socket.send(packetToMachine);
+
                             try {
                                 Thread.sleep(3000);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
+                            messageToMachine = "Saíndo da zona crítica: " + node.host + "-" + node.port;
+                            outputToMachine = messageToMachine.getBytes();
+                            packetToMachine = new DatagramPacket(outputToMachine, outputToMachine.length,
+                                InetAddress.getByName("localhost"), Integer.parseInt("7070"));
+                            socket.send(packetToMachine);
+
                             output = "cleared".getBytes();
                             datagramPacket = new DatagramPacket(output, output.length,
                                     InetAddress.getByName(managerNode.host), Integer.parseInt(managerNode.port));
