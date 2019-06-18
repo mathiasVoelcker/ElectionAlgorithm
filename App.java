@@ -139,7 +139,7 @@ public class App {
                             messageToMachine = "Saíndo da zona crítica: " + node.host + "-" + node.port;
                             outputToMachine = messageToMachine.getBytes();
                             packetToMachine = new DatagramPacket(outputToMachine, outputToMachine.length,
-                                InetAddress.getByName("localhost"), Integer.parseInt("7070"));
+                                InetAddress.getByName("172.17.0.2"), Integer.parseInt("7070"));
                             socket.send(packetToMachine);
 
                             output = "cleared".getBytes();
